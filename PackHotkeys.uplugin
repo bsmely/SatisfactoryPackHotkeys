@@ -1,0 +1,39 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"SemVersion": "1.0.0",
+	"GameVersion": ">=491125",
+	"FriendlyName": "Pack Hotkeys",
+	"Description": "Separate hotkeys for equipping the Jetpack, Hover Pack and Parachute into the back equipment slot.",
+	"Category": "Modding",
+	"CreatedBy": "bsmely",
+	"CreatedByURL": "https://github.com/bsmely",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "https://github.com/bsmely/SatisfactoryPackHotkeys/issues",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"RequiredOnRemote": false,
+	"Modules": [
+		{
+			"Name": "PackHotkeys",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "SML",
+			"Enabled": true,
+			"SemVersion": "^3.12.0"
+		},
+		{
+			"Name": "EnhancedInput",
+			"Enabled": true,
+			"BasePlugin": true
+		}
+	]
+}

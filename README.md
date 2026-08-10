@@ -6,12 +6,10 @@ and dragging items around.
 
 Defaults: `F1` Jetpack, `F2` Hover Pack, `F` Parachute.
 
-> [!WARNING]
-> **This mod has never been compiled or run.** It was written against the Satisfactory 1.2
-> headers from the Starter Project, but the author has no modding environment set up, so there
-> is no packaged build and no in-game testing behind it. Treat it as a starting point that
-> almost certainly needs a fix or two on first compile. If you build it and it works — or
-> doesn't — please open an issue and say so.
+> [!NOTE]
+> **Build status:** compiles clean against UE 5.6.1-CSS / SML 3.12 and packages into a
+> loadable Shipping build via Alpakit. In-game behaviour is still being verified — see
+> [Known limitations](#known-limitations) for the parts most likely to need work.
 
 ## What it does
 
@@ -79,6 +77,29 @@ Then:
    match the plugin name.
 2. Regenerate project files and build the editor target.
 3. Package with Alpakit (`Alpakit Dev` installs it straight into your game).
+
+The whole cycle also runs headless, without opening the editor:
+
+```powershell
+$engine = 'D:\Dev\Tools\ue-css'
+$project = 'D:\Dev\Tools\sml\FactoryGame.uproject'
+
+# project files (once)
+& "$engine\Engine\Build\BatchFiles\Build.bat" -projectfiles -project="$project" -game -rocket -progress
+
+# editor target (once, ~10 min; also applies the WwisePatches pre-build steps)
+& "$engine\Engine\Build\BatchFiles\Build.bat" FactoryEditor Win64 Development -project="$project" -progress
+
+# build + cook + package the mod, optionally straight into the game
+& "$engine\Engine\Build\BatchFiles\RunUAT.bat" -ScriptsForProject="$project" PackagePlugin `
+    -project="$project" -clientconfig=Shipping -serverconfig=Shipping -utf8output `
+    -DLCName=PackHotkeys -build -platform=Win64 -nocompileeditor `
+    -CopyToGameDirectory_Windows="<path to Satisfactory>"
+```
+
+Note the editor target is called `FactoryEditor`, not `FactoryGameEditor`. The output archive
+lands in `<StarterProject>/Saved/ArchivedPlugins/PackHotkeys/PackHotkeys-Windows.zip`; to
+install by hand, unzip it into `<Satisfactory>/FactoryGame/Mods/PackHotkeys`.
 
 ## Compatibility
 

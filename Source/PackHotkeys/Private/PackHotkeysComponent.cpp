@@ -6,8 +6,6 @@
 #include "PackHotkeysSettings.h"
 
 #include "EnhancedInputComponent.h"
-#include "EnhancedInputSubsystems.h"
-#include "Engine/LocalPlayer.h"
 #include "Equipment/FGEquipment.h"
 #include "Equipment/FGHoverPack.h"
 #include "Equipment/FGJetPack.h"
@@ -16,11 +14,14 @@
 #include "FGInventoryComponent.h"
 #include "FGInventoryComponentEquipment.h"
 #include "FGPlayerController.h"
-#include "Framework/Application/SlateApplication.h"
-#include "Input/FGInputMappingContext.h"
 #include "InputAction.h"
 
-#define LOCTEXT_NAMESPACE "PackHotkeys"
+namespace PackHotkeysActions
+{
+	const TCHAR* JetPack = TEXT( "/PackHotkeys/Inputs/IA_EquipJetPack.IA_EquipJetPack" );
+	const TCHAR* HoverPack = TEXT( "/PackHotkeys/Inputs/IA_EquipHoverPack.IA_EquipHoverPack" );
+	const TCHAR* Parachute = TEXT( "/PackHotkeys/Inputs/IA_EquipParachute.IA_EquipParachute" );
+}
 
 UPackHotkeysComponent::UPackHotkeysComponent()
 {
@@ -36,96 +37,29 @@ void UPackHotkeysComponent::SetupPlayerInput( UInputComponent* InputComponent )
 		return;
 	}
 
-	CreateInputActions();
-	AddMappingContext();
+	// The mapping context that carries these actions is a child of MC_PlayerActions,
+	// so the game binds and unbinds it for us - we only have to listen for the actions.
+	auto BindAction = [ this, EnhancedInput ]( const TCHAR* AssetPath, void ( UPackHotkeysComponent::*Handler )() )
+	{
+		if( UInputAction* Action = LoadObject< UInputAction >( nullptr, AssetPath ) )
+		{
+			EnhancedInput->BindAction( Action, ETriggerEvent::Started, this, Handler );
+		}
+		else
+		{
+			UE_LOG( LogPackHotkeys, Error, TEXT( "Could not load input action %s" ), AssetPath );
+		}
+	};
 
-	EnhancedInput->BindAction( JetPackAction, ETriggerEvent::Started, this, &UPackHotkeysComponent::OnJetPackPressed );
-	EnhancedInput->BindAction( HoverPackAction, ETriggerEvent::Started, this, &UPackHotkeysComponent::OnHoverPackPressed );
-	EnhancedInput->BindAction( ParachuteAction, ETriggerEvent::Started, this, &UPackHotkeysComponent::OnParachutePressed );
+	BindAction( PackHotkeysActions::JetPack, &UPackHotkeysComponent::OnJetPackPressed );
+	BindAction( PackHotkeysActions::HoverPack, &UPackHotkeysComponent::OnHoverPackPressed );
+	BindAction( PackHotkeysActions::Parachute, &UPackHotkeysComponent::OnParachutePressed );
 
 	// Make sure the RCO exists on this side before the first key press needs it.
 	const APawn* Pawn = Cast< APawn >( GetOwner() );
 	if( AFGPlayerController* Controller = Pawn ? Cast< AFGPlayerController >( Pawn->GetController() ) : nullptr )
 	{
 		Controller->RegisterRemoteCallObjectClass( UPackHotkeysRCO::StaticClass() );
-	}
-}
-
-void UPackHotkeysComponent::EndPlay( const EEndPlayReason::Type EndPlayReason )
-{
-	RemoveMappingContext();
-
-	Super::EndPlay( EndPlayReason );
-}
-
-void UPackHotkeysComponent::CreateInputActions()
-{
-	if( MappingContext )
-	{
-		return;
-	}
-
-	const UPackHotkeysSettings* Settings = UPackHotkeysSettings::Get();
-
-	auto MakeAction = [ this ]( const TCHAR* Name, const FText& Description ) -> UInputAction*
-	{
-		UInputAction* Action = NewObject< UInputAction >( this, FName( Name ) );
-		Action->ValueType = EInputActionValueType::Boolean;
-		Action->ActionDescription = Description;
-		// Never swallow the key - other mods and the base game may want it too.
-		Action->bConsumeInput = false;
-		return Action;
-	};
-
-	JetPackAction = MakeAction( TEXT( "IA_PackHotkeys_JetPack" ), LOCTEXT( "JetPackAction", "Equip Jetpack" ) );
-	HoverPackAction = MakeAction( TEXT( "IA_PackHotkeys_HoverPack" ), LOCTEXT( "HoverPackAction", "Equip Hover Pack" ) );
-	ParachuteAction = MakeAction( TEXT( "IA_PackHotkeys_Parachute" ), LOCTEXT( "ParachuteAction", "Equip Parachute" ) );
-
-	MappingContext = NewObject< UFGInputMappingContext >( this, TEXT( "MC_PackHotkeys" ) );
-	MappingContext->mDisplayName = LOCTEXT( "MappingContextName", "Pack Hotkeys" );
-	MappingContext->mMenuPriority = 200.0f;
-
-	MappingContext->MapKey( JetPackAction, Settings->JetPackKey );
-	MappingContext->MapKey( HoverPackAction, Settings->HoverPackKey );
-	MappingContext->MapKey( ParachuteAction, Settings->ParachuteKey );
-}
-
-void UPackHotkeysComponent::AddMappingContext()
-{
-	const APawn* Pawn = Cast< APawn >( GetOwner() );
-	const APlayerController* Controller = Pawn ? Cast< APlayerController >( Pawn->GetController() ) : nullptr;
-	const ULocalPlayer* LocalPlayer = Controller ? Controller->GetLocalPlayer() : nullptr;
-	if( !LocalPlayer )
-	{
-		return;
-	}
-
-	if( UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem< UEnhancedInputLocalPlayerSubsystem >() )
-	{
-		// The context is registered manually rather than through the parent context system,
-		// because that one only picks up mapping contexts that exist as cooked assets.
-		Subsystem->AddMappingContext( MappingContext, UPackHotkeysSettings::Get()->MappingContextPriority );
-	}
-}
-
-void UPackHotkeysComponent::RemoveMappingContext()
-{
-	if( !MappingContext )
-	{
-		return;
-	}
-
-	const APawn* Pawn = Cast< APawn >( GetOwner() );
-	const APlayerController* Controller = Pawn ? Cast< APlayerController >( Pawn->GetController() ) : nullptr;
-	const ULocalPlayer* LocalPlayer = Controller ? Controller->GetLocalPlayer() : nullptr;
-	if( !LocalPlayer )
-	{
-		return;
-	}
-
-	if( UEnhancedInputLocalPlayerSubsystem* Subsystem = LocalPlayer->GetSubsystem< UEnhancedInputLocalPlayerSubsystem >() )
-	{
-		Subsystem->RemoveMappingContext( MappingContext );
 	}
 }
 
@@ -146,11 +80,6 @@ void UPackHotkeysComponent::OnParachutePressed()
 
 void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClass )
 {
-	if( IsTypingIntoWidget() )
-	{
-		return;
-	}
-
 	AFGCharacterPlayer* Character = Cast< AFGCharacterPlayer >( GetOwner() );
 	if( !IsValid( Character ) )
 	{
@@ -158,10 +87,6 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 	}
 
 	AFGPlayerController* Controller = Cast< AFGPlayerController >( Character->GetController() );
-	if( IsValid( Controller ) && Controller->IsPauseMenuOpen() )
-	{
-		return;
-	}
 
 	UFGInventoryComponentEquipment* BackSlot = Character->GetEquipmentSlot( EEquipmentSlot::ES_BACK );
 	if( !IsValid( BackSlot ) )
@@ -225,22 +150,3 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 		UE_LOG( LogPackHotkeys, Warning, TEXT( "No remote call object available - is the mod installed on the server?" ) );
 	}
 }
-
-bool UPackHotkeysComponent::IsTypingIntoWidget()
-{
-	if( !FSlateApplication::IsInitialized() )
-	{
-		return false;
-	}
-
-	const TSharedPtr< SWidget > FocusedWidget = FSlateApplication::Get().GetKeyboardFocusedWidget();
-	if( !FocusedWidget.IsValid() )
-	{
-		return false;
-	}
-
-	const FString WidgetType = FocusedWidget->GetTypeAsString();
-	return WidgetType.Contains( TEXT( "EditableText" ) );
-}
-
-#undef LOCTEXT_NAMESPACE

@@ -6,13 +6,16 @@
 #include "PackHotkeysComponent.generated.h"
 
 class AFGEquipment;
-class UFGInputMappingContext;
 class UInputAction;
 class UInputComponent;
 
 /**
- * Added at runtime to the local player character. Owns the mod's input actions
+ * Added at runtime to the local player character, binds the mod's input actions
  * and turns key presses into back equipment slot changes.
+ *
+ * The actions themselves live as assets under /PackHotkeys/Inputs so the game can
+ * list them in Options > Keybindings; MC_PackHotkeys is a child context of
+ * MC_PlayerActions, so the game applies and removes it for us.
  */
 UCLASS()
 class PACKHOTKEYS_API UPackHotkeysComponent : public UActorComponent
@@ -25,33 +28,11 @@ public:
 	/** Binds the mod's actions onto the character's freshly created input component. */
 	void SetupPlayerInput( UInputComponent* InputComponent );
 
-protected:
-	virtual void EndPlay( const EEndPlayReason::Type EndPlayReason ) override;
-
 private:
-	void CreateInputActions();
-	void AddMappingContext();
-	void RemoveMappingContext();
-
 	void OnJetPackPressed();
 	void OnHoverPackPressed();
 	void OnParachutePressed();
 
-	/** Equips the first item in reach whose equipment class derives from EquipmentClass. */
+	/** Equips the first item within reach whose equipment class derives from EquipmentClass. */
 	void EquipPack( TSubclassOf< AFGEquipment > EquipmentClass );
-
-	/** True while the player is typing (chat, sign text, search fields), so we keep our hands off the keys. */
-	static bool IsTypingIntoWidget();
-
-	UPROPERTY( Transient )
-	TObjectPtr< UInputAction > JetPackAction;
-
-	UPROPERTY( Transient )
-	TObjectPtr< UInputAction > HoverPackAction;
-
-	UPROPERTY( Transient )
-	TObjectPtr< UInputAction > ParachuteAction;
-
-	UPROPERTY( Transient )
-	TObjectPtr< UFGInputMappingContext > MappingContext;
 };

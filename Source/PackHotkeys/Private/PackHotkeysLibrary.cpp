@@ -32,7 +32,13 @@ int32 UPackHotkeysLibrary::FindIndexOfEquipmentClass( UFGInventoryComponent* Inv
 			continue;
 		}
 
-		// Non-equipment descriptors simply return nullptr here.
+		// GetEquipmentClass asserts if handed a descriptor that is not an equipment descriptor,
+		// so ordinary items (ore, plates, ...) have to be filtered out before calling it.
+		if( !ItemClass->IsChildOf( UFGEquipmentDescriptor::StaticClass() ) )
+		{
+			continue;
+		}
+
 		const TSubclassOf< AFGEquipment > ItemEquipmentClass = UFGEquipmentDescriptor::GetEquipmentClass( ItemClass );
 		if( IsValid( ItemEquipmentClass ) && ItemEquipmentClass->IsChildOf( EquipmentClass ) )
 		{

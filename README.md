@@ -4,7 +4,7 @@ Separate hotkeys for the back equipment slot in Satisfactory 1.2: one key each f
 **Jetpack**, the **Hover Pack** and the **Parachute**, instead of opening the inventory
 and dragging items around.
 
-Defaults: `F1` Jetpack, `F2` Hover Pack, `F` Parachute.
+Defaults: `F1` Jetpack, `F2` Hover Pack, `F3` Parachute.
 
 > [!NOTE]
 > **Build status:** compiles clean against UE 5.6.1-CSS / SML 3.12 and packages into a
@@ -35,7 +35,7 @@ settings menu. Keys are read from `Game.ini`:
 [/Script/PackHotkeys.PackHotkeysSettings]
 JetPackKey=(Key=F1)
 HoverPackKey=(Key=F2)
-ParachuteKey=(Key=F)
+ParachuteKey=(Key=F3)
 bUnequipWhenAlreadyEquipped=False
 MappingContextPriority=1000
 ```

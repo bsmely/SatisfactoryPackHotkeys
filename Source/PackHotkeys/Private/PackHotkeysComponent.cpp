@@ -18,8 +18,7 @@
 
 namespace PackHotkeysActions
 {
-	const TCHAR* JetPack = TEXT( "/PackHotkeys/Inputs/IA_EquipJetPack.IA_EquipJetPack" );
-	const TCHAR* HoverPack = TEXT( "/PackHotkeys/Inputs/IA_EquipHoverPack.IA_EquipHoverPack" );
+	const TCHAR* TogglePack = TEXT( "/PackHotkeys/Inputs/IA_TogglePack.IA_TogglePack" );
 	const TCHAR* Parachute = TEXT( "/PackHotkeys/Inputs/IA_EquipParachute.IA_EquipParachute" );
 }
 
@@ -51,8 +50,7 @@ void UPackHotkeysComponent::SetupPlayerInput( UInputComponent* InputComponent )
 		}
 	};
 
-	BindAction( PackHotkeysActions::JetPack, &UPackHotkeysComponent::OnJetPackPressed );
-	BindAction( PackHotkeysActions::HoverPack, &UPackHotkeysComponent::OnHoverPackPressed );
+	BindAction( PackHotkeysActions::TogglePack, &UPackHotkeysComponent::OnTogglePackPressed );
 	BindAction( PackHotkeysActions::Parachute, &UPackHotkeysComponent::OnParachutePressed );
 
 	// Make sure the RCO exists on this side before the first key press needs it.
@@ -63,14 +61,33 @@ void UPackHotkeysComponent::SetupPlayerInput( UInputComponent* InputComponent )
 	}
 }
 
-void UPackHotkeysComponent::OnJetPackPressed()
+void UPackHotkeysComponent::OnTogglePackPressed()
 {
-	EquipPack( AFGJetPack::StaticClass() );
-}
+	const AFGCharacterPlayer* Character = Cast< AFGCharacterPlayer >( GetOwner() );
+	if( !IsValid( Character ) )
+	{
+		return;
+	}
 
-void UPackHotkeysComponent::OnHoverPackPressed()
-{
-	EquipPack( AFGHoverPack::StaticClass() );
+	const AFGEquipment* Equipped = Character->GetEquipmentInSlot( EEquipmentSlot::ES_BACK );
+
+	// Wearing one of the two packs: swap to the other one, and stay put if we don't have it.
+	if( Equipped && Equipped->IsA( AFGJetPack::StaticClass() ) )
+	{
+		EquipPack( AFGHoverPack::StaticClass() );
+		return;
+	}
+	if( Equipped && Equipped->IsA( AFGHoverPack::StaticClass() ) )
+	{
+		EquipPack( AFGJetPack::StaticClass() );
+		return;
+	}
+
+	// Nothing (or the parachute) on our back: put a pack on, whichever we happen to carry.
+	if( !EquipPack( AFGJetPack::StaticClass() ) )
+	{
+		EquipPack( AFGHoverPack::StaticClass() );
+	}
 }
 
 void UPackHotkeysComponent::OnParachutePressed()
@@ -78,12 +95,12 @@ void UPackHotkeysComponent::OnParachutePressed()
 	EquipPack( AFGParachute::StaticClass() );
 }
 
-void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClass )
+bool UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClass )
 {
 	AFGCharacterPlayer* Character = Cast< AFGCharacterPlayer >( GetOwner() );
 	if( !IsValid( Character ) )
 	{
-		return;
+		return false;
 	}
 
 	AFGPlayerController* Controller = Cast< AFGPlayerController >( Character->GetController() );
@@ -91,7 +108,7 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 	UFGInventoryComponentEquipment* BackSlot = Character->GetEquipmentSlot( EEquipmentSlot::ES_BACK );
 	if( !IsValid( BackSlot ) )
 	{
-		return;
+		return false;
 	}
 
 	const UPackHotkeysSettings* Settings = UPackHotkeysSettings::Get();
@@ -103,7 +120,7 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 		{
 			if( !Settings->bUnequipWhenAlreadyEquipped )
 			{
-				return;
+				return true;
 			}
 
 			const int32 ActiveIndex = BackSlot->GetActiveIndex();
@@ -115,7 +132,7 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 			{
 				RCO->Server_MoveOutOfBackSlot( Character, ActiveIndex );
 			}
-			return;
+			return true;
 		}
 	}
 
@@ -125,7 +142,7 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 	{
 		// Server RPC on a component the local player owns, so this is fine to call from the client.
 		BackSlot->Server_SetActiveEquipmentIndex( SlotIndex );
-		return;
+		return true;
 	}
 
 	// Otherwise fetch it out of the player inventory.
@@ -134,7 +151,7 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 	if( SourceIndex == INDEX_NONE )
 	{
 		UE_LOG( LogPackHotkeys, Verbose, TEXT( "No item of class %s in the inventory" ), *GetNameSafe( EquipmentClass ) );
-		return;
+		return false;
 	}
 
 	if( Character->HasAuthority() )
@@ -148,5 +165,8 @@ void UPackHotkeysComponent::EquipPack( TSubclassOf< AFGEquipment > EquipmentClas
 	else
 	{
 		UE_LOG( LogPackHotkeys, Warning, TEXT( "No remote call object available - is the mod installed on the server?" ) );
+		return false;
 	}
+
+	return true;
 }

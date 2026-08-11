@@ -29,10 +29,13 @@ public:
 	void SetupPlayerInput( UInputComponent* InputComponent );
 
 private:
-	void OnJetPackPressed();
-	void OnHoverPackPressed();
+	/** Equips the Jetpack, or swaps between Jetpack and Hover Pack if one of them is worn. */
+	void OnTogglePackPressed();
 	void OnParachutePressed();
 
-	/** Equips the first item within reach whose equipment class derives from EquipmentClass. */
-	void EquipPack( TSubclassOf< AFGEquipment > EquipmentClass );
+	/**
+	 * Equips the first item within reach whose equipment class derives from EquipmentClass.
+	 * @return false if no such item is in the back slot or the player inventory.
+	 */
+	bool EquipPack( TSubclassOf< AFGEquipment > EquipmentClass );
 };

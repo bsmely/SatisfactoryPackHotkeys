@@ -18,11 +18,20 @@ INPUT_DIR = "{0}/Inputs".format(CONTENT_ROOT)
 PARENT_CONTEXT = "/Game/FactoryGame/Inputs/Player/MC_PlayerActions"
 CATEGORY = "Pack Hotkeys"
 
-# suffix, default key, display name, description
+# asset name, default key, display name, description
 ACTIONS = [
-    ("JetPack", "F1", "Equip Jetpack", "Equip the Jetpack into the back slot."),
-    ("HoverPack", "F2", "Equip Hover Pack", "Equip the Hover Pack into the back slot."),
-    ("Parachute", "F3", "Equip Parachute", "Equip the Parachute into the back slot."),
+    (
+        "IA_TogglePack",
+        "F1",
+        "Toggle Pack",
+        "Equip the Jetpack, or swap between the Jetpack and the Hover Pack.",
+    ),
+    (
+        "IA_EquipParachute",
+        "F2",
+        "Equip Parachute",
+        "Equip the Parachute into the back slot.",
+    ),
 ]
 
 asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
@@ -51,9 +60,9 @@ def data_asset_factory(asset_class):
     return factory
 
 
-def make_action(suffix, display_name, description):
+def make_action(asset_name, display_name, description):
     action = create_asset(
-        "IA_Equip{0}".format(suffix),
+        asset_name,
         INPUT_DIR,
         unreal.InputAction,
         unreal.InputAction_Factory(),
@@ -63,10 +72,18 @@ def make_action(suffix, display_name, description):
     # Never swallow the key - other mods and the base game may want it too.
     action.set_editor_property("consume_input", False)
 
-    # This object is what makes the action show up in the keybinding menu.
-    # As of 1.2 these settings live on the action, not on the context mapping.
-    settings = unreal.PlayerMappableKeySettings()
-    settings.set_editor_property("name", unreal.Name("{0}_{1}".format(PLUGIN, suffix)))
+    # This object is what makes the action show up in the keybinding menu, and as of 1.2
+    # it lives on the action rather than on the context mapping.
+    # It has to be created as a subobject of the action: a plain constructor call produces
+    # a transient object that is silently dropped when the asset is saved.
+    settings = unreal.new_object(
+        unreal.PlayerMappableKeySettings,
+        outer=action,
+        name="PlayerMappableKeySettings_0",
+    )
+    settings.set_editor_property(
+        "name", unreal.Name("{0}_{1}".format(PLUGIN, asset_name.replace("IA_", "")))
+    )
     settings.set_editor_property("display_name", unreal.Text(display_name))
     settings.set_editor_property("display_category", unreal.Text(CATEGORY))
     action.set_editor_property("player_mappable_key_settings", settings)
@@ -129,10 +146,10 @@ def make_game_feature_data(context_path):
 
 def run():
     actions_with_keys = []
-    for suffix, key, display_name, description in ACTIONS:
-        action = make_action(suffix, display_name, description)
+    for asset_name, key, display_name, description in ACTIONS:
+        action = make_action(asset_name, display_name, description)
         actions_with_keys.append((action, key))
-        unreal.log("PACKHOTKEYS created IA_Equip{0} default {1}".format(suffix, key))
+        unreal.log("PACKHOTKEYS created {0} default {1}".format(asset_name, key))
 
     make_context(actions_with_keys)
     unreal.log("PACKHOTKEYS created MC_{0}".format(PLUGIN))

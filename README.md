@@ -1,10 +1,16 @@
 # Pack Hotkeys
 
-Separate hotkeys for the back equipment slot in Satisfactory 1.2: one key each for the
-**Jetpack**, the **Hover Pack** and the **Parachute**, instead of opening the inventory
+Hotkeys for the back equipment slot in Satisfactory 1.2, instead of opening the inventory
 and dragging items around.
 
-Defaults: `F1` Jetpack, `F2` Hover Pack, `F3` Parachute.
+| Key | Action |
+|---|---|
+| `F1` | **Toggle Pack** — equips the Jetpack, or swaps between Jetpack and Hover Pack when one of them is worn |
+| `F2` | **Equip Parachute** |
+
+With an empty back slot (or the parachute on it), `F1` puts on the Jetpack, falling back to
+the Hover Pack if you are not carrying one. If you do not carry the other pack, the current
+one stays on.
 
 > [!NOTE]
 > **Build status:** compiles clean against UE 5.6.1-CSS / SML 3.12 and packages into a
@@ -13,12 +19,12 @@ Defaults: `F1` Jetpack, `F2` Hover Pack, `F3` Parachute.
 
 ## What it does
 
-Pressing a key equips the matching pack into the back equipment slot:
+To equip a pack, the mod:
 
-1. If that kind of pack is already equipped, nothing happens (or it is put away, if
-   `bUnequipWhenAlreadyEquipped` is enabled).
-2. If the pack already sits in the back slot inventory, it is simply made the active one.
-3. Otherwise the first matching item in the player inventory is moved into the back slot,
+1. checks whether that kind of pack is already worn — then nothing happens, or it is put
+   away if `bUnequipWhenAlreadyEquipped` is enabled;
+2. makes it the active one if it already sits in the back slot inventory;
+3. otherwise moves the first matching item from the player inventory into the back slot,
    swapping out whatever was there.
 
 Matching is done on the native equipment classes `AFGJetPack`, `AFGHoverPack` and
@@ -46,8 +52,12 @@ by hand:
 | Asset | Purpose |
 |---|---|
 | `PackHotkeys` (`FGGameFeatureData`) | tells the game to scan the mod for `FGChildInputMappingContext` |
-| `Inputs/IA_EquipJetPack` etc. | the three actions, carrying the `PlayerMappableKeySettings` that put them in the keybinding menu |
+| `Inputs/IA_TogglePack`, `Inputs/IA_EquipParachute` | the two actions, carrying the `PlayerMappableKeySettings` that put them in the keybinding menu |
 | `Inputs/MC_PackHotkeys` | `FGChildInputMappingContext` with `mParentContext = MC_PlayerActions`, holding the default keys |
+
+Note that the settings object must be created as a subobject of its action
+(`new_object(..., outer=action)`); building it with a plain constructor yields a transient
+object that is dropped on save, and the action then never shows up in the menu.
 
 Parenting the context to `MC_PlayerActions` means the game applies and removes the bindings
 along with its own, so the keys do not fire while typing in chat or in menus.

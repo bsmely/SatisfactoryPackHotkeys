@@ -95,8 +95,8 @@ along with its own, so the keys do not fire while typing in chat or in menus.
 To regenerate the assets after changing the script:
 
 ```powershell
-& "D:\Dev\Tools\ue-css\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" `
-    "D:\Dev\Tools\sml\FactoryGame.uproject" -run=pythonscript `
+& "<engine>\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" `
+    "<starter-project>\FactoryGame.uproject" -run=pythonscript `
     -script="<repo>\Scripts\create_input_assets.py" -stdout -unattended -nosplash
 ```
 
@@ -132,8 +132,9 @@ Then:
 The whole cycle also runs headless, without opening the editor:
 
 ```powershell
-$engine = 'D:\Dev\Tools\ue-css'
-$project = 'D:\Dev\Tools\sml\FactoryGame.uproject'
+# point these at your own install of the CSS engine and the Starter Project
+$engine = '<engine>'
+$project = '<starter-project>\FactoryGame.uproject'
 
 # project files (once)
 & "$engine\Engine\Build\BatchFiles\Build.bat" -projectfiles -project="$project" -game -rocket -progress

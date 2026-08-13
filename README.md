@@ -12,10 +12,17 @@ With an empty back slot (or the parachute on it), `F1` puts on the Jetpack, fall
 the Hover Pack if you are not carrying one. If you do not carry the other pack, the current
 one stays on.
 
-> [!NOTE]
-> **Build status:** compiles clean against UE 5.6.1-CSS / SML 3.12 and packages into a
-> loadable Shipping build via Alpakit. In-game behaviour is still being verified — see
-> [Known limitations](#known-limitations) for the parts most likely to need work.
+> [!IMPORTANT]
+> **Unmaintained.** This was a weekend project, built because no updated mod covered the
+> back equipment slot on 1.2. It works — see [Releases](../../releases) for a ready-to-use
+> Windows build — but it will not be updated when the game changes, and it is not published
+> on [ficsit.app](https://ficsit.app), so the Mod Manager will not install or update it.
+>
+> The repository is archived and read-only. **Fork it freely** — MIT licensed. If you want to
+> publish it on the Mod Repository under your own name, go ahead, no need to ask.
+>
+> Verified working on Satisfactory **1.2.4** (CL 502094) with SML 3.12.0, built against the
+> 1.2.0 headers (CL 495413).
 
 ## What it does
 
@@ -29,6 +36,29 @@ To equip a pack, the mod:
 
 Matching is done on the native equipment classes `AFGJetPack`, `AFGHoverPack` and
 `AFGParachute`, so modded packs deriving from them are picked up as well.
+
+## Installing
+
+The Mod Manager cannot install this mod — it is not on the Mod Repository. Install by hand:
+
+1. Install [SML](https://ficsit.app/mod/SML) 3.12.0 or newer, easiest via the
+   [Satisfactory Mod Manager](https://ficsit.app/) (installing any mod through it pulls SML in).
+2. Grab `PackHotkeys.zip` from [Releases](../../releases).
+3. Unzip it so that the plugin descriptor ends up at
+   `<Satisfactory>/FactoryGame/Mods/GameFeatures/PackHotkeys/PackHotkeys.uplugin`.
+   The folder must be named exactly `PackHotkeys`, and it must sit under `GameFeatures` —
+   this is a game feature plugin and will not load from `Mods/` directly.
+4. Start the game. The keys appear under **Options → Keybindings → Pack Hotkeys**.
+
+Typical install path on Steam:
+`C:\Program Files (x86)\Steam\steamapps\common\Satisfactory\FactoryGame\Mods\GameFeatures\PackHotkeys`
+
+To uninstall, delete that folder. Nothing is written into your save, so removing the mod
+cannot break a world.
+
+> [!NOTE]
+> The Mod Manager only manages mods it installed itself. It may remove folders it does not
+> recognise when it syncs a profile, so re-check this one after using it.
 
 ## Configuration
 
